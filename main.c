@@ -94,7 +94,7 @@ static void usage(void)
 {
   puts(mutt_make_version());
 
-  /* Try to occupy no more than 80 columns */
+  /* L10N: Try to limit to 80 columns */
   puts(_("usage:\n"
          "  neomutt [-Enx] [-e <command>] [-F <config>] [-H <draft>] [-i <include>]\n"
          "          [-b <address>] [-c <address>] [-s <subject>] [-a <file> [...] --]\n"
@@ -114,6 +114,8 @@ static void usage(void)
          "  neomutt [-n] [-e <command>] [-F <config>] -z [-f <mailbox>]\n"
          "  neomutt -v[v]\n"));
 
+  /* L10N: Try to limit to 80 columns
+           If more space is needed add an indented line */
   puts(_("options:\n"
          "  -A <alias>    Print an expanded version of the given alias to stdout and exit.\n"
          "  -a <file>     Attach one or more files to a message. Must be given at last and\n"
