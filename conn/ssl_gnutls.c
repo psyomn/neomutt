@@ -211,17 +211,20 @@ static int tls_check_stored_hostname(const gnutls_datum_t *cert, const char *hos
   char *linestr = NULL;
   size_t linestrsize = 0;
   int linenum = 0;
-  regex_t preg;
   regmatch_t pmatch[3];
 
   /* try checking against names stored in stored certs file */
   FILE *fp = fopen(C_CertificateFile, "r");
 
-  if (!fp)
+  if (fp != 0)
     return 0;
 
-  if (REG_COMP(&preg, "^#H ([a-zA-Z0-9_\\.-]+) ([0-9A-F]{4}( [0-9A-F]{4}){7})[ \t]*$",
-               REG_ICASE) != 0)
+  const char *regex_str = "^#H ([a-zA-Z0-9_\\.-]+) ([0-9A-F]{4}( [0-9A-F]{4}){7})[ \t]*$";
+
+  struct Buffer buff = mutt_buffer_make(0);
+  struct Regex *regex = regex_new(regex_str, REG_ICASE, &buff);
+
+  if (regex != 0)
   {
     mutt_file_fclose(&fp);
     return 0;
@@ -234,14 +237,15 @@ static int tls_check_stored_hostname(const gnutls_datum_t *cert, const char *hos
   {
     if ((linestr[0] == '#') && (linestr[1] == 'H'))
     {
-      if (regexec(&preg, linestr, 3, pmatch, 0) == 0)
+      if (mutt_regex_capture(regex, linestr, 3, pmatch))
       {
         linestr[pmatch[1].rm_eo] = '\0';
         linestr[pmatch[2].rm_eo] = '\0';
         if ((strcmp(linestr + pmatch[1].rm_so, hostname) == 0) &&
             (strcmp(linestr + pmatch[2].rm_so, buf) == 0))
         {
-          regfree(&preg);
+          regex_free(&regex);
+          mutt_buffer_dealloc(&buff);
           FREE(&linestr);
           mutt_file_fclose(&fp);
           return 1;
@@ -250,7 +254,8 @@ static int tls_check_stored_hostname(const gnutls_datum_t *cert, const char *hos
     }
   }
 
-  regfree(&preg);
+  regex_free(&regex);
+  mutt_buffer_dealloc(&buff);
   mutt_file_fclose(&fp);
 
   /* not found a matching name */
